@@ -1,15 +1,13 @@
-"""Content-based Movie Recommendation System using TF-IDF on genre vectors."""
+"""Content-based Movie Recommendation System using TF-IDF on genre vectors.
 
-import os
+Hadoop MapReduce implementation via mrjob.
+Usage: python content_based.py -r hadoop --movies dataset/movies.csv dataset/ratings.csv -o output/content/
+"""
+
 import math
-import pandas as pd
-import numpy as np
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(SCRIPT_DIR)
-MOVIES_PATH = os.path.join(BASE_DIR, "dataset", "movies.csv")
-RATINGS_PATH = os.path.join(BASE_DIR, "dataset", "ratings.csv")
-OUTPUT_PATH = os.path.join(BASE_DIR, "output", "contentout.txt")
+from mrjob.job import MRJob
+from mrjob.step import MRStep
+from mrjob.protocol import RawValueProtocol
 
 ALL_GENRES = [
     "Action", "Adventure", "Animation", "Children", "Comedy", "Crime",
@@ -17,122 +15,133 @@ ALL_GENRES = [
     "Musical", "Mystery", "Romance", "Sci-Fi", "Thriller", "War",
     "Western", "(no genres listed)",
 ]
+NUM_GENRES = len(ALL_GENRES)
+GENRE_INDEX = {g: i for i, g in enumerate(ALL_GENRES)}
+SORT_CONSTANT = 1e12
 
 
-def load_data():
-    movies = pd.read_csv(
-        MOVIES_PATH, header=None, names=["movieId", "title", "genres"],
-        dtype={"movieId": int, "title": str, "genres": str},
-    )
-    ratings = pd.read_csv(
-        RATINGS_PATH, header=None, names=["userId", "movieId", "rating", "timestamp"],
-        dtype={"userId": int, "movieId": int, "rating": float},
-    )
-    ratings = ratings.drop(columns=["timestamp"])
-    return movies, ratings
+def parse_movie_line(line):
+    """Parse a movies.csv line handling commas in titles.
+
+    Format: movieId,title,genres (genres are pipe-separated, never contain commas)
+    """
+    line = line.strip()
+    if not line:
+        return None
+    last_comma = line.rfind(",")
+    genres_str = line[last_comma + 1:]
+    rest = line[:last_comma]
+    first_comma = rest.index(",")
+    movie_id = int(rest[:first_comma])
+    title = rest[first_comma + 1:]
+    genres = genres_str.split("|")
+    return movie_id, title, genres
 
 
-def build_genre_matrix(movies):
-    """Create a normalized genre vector for each movie (1/sqrt(num_genres))."""
-    genre_data = {}
-    for _, row in movies.iterrows():
-        movie_id = row["movieId"]
-        genres = row["genres"].split("|")
-        norm = 1.0 / math.sqrt(len(genres))
-        genre_data[movie_id] = {g: norm for g in genres}
+class ContentBasedMRJob(MRJob):
 
-    genre_df = pd.DataFrame.from_dict(genre_data, orient="index").fillna(0.0)
-    # Ensure all genre columns exist
-    for g in ALL_GENRES:
-        if g not in genre_df.columns:
-            genre_df[g] = 0.0
-    genre_df = genre_df[ALL_GENRES]
-    genre_df.index.name = "movieId"
-    return genre_df
+    OUTPUT_PROTOCOL = RawValueProtocol
 
+    def configure_args(self):
+        super().configure_args()
+        self.add_file_arg("--movies", help="Path to movies.csv")
 
-def compute_idf(movies):
-    """Compute IDF for each genre: log(total_movies / genre_count)."""
-    total_movies = len(movies)
-    genre_counts = {}
-    for genres_str in movies["genres"]:
-        for g in genres_str.split("|"):
-            genre_counts[g] = genre_counts.get(g, 0) + 1
+    def load_movies(self):
+        """Load movies.csv into genre vectors, IDF scores, and title map."""
+        self.genre_vectors = {}
+        self.title_map = {}
+        genre_counts = [0] * NUM_GENRES
+        total_movies = 0
 
-    idf = {}
-    for g in ALL_GENRES:
-        count = genre_counts.get(g, 1)
-        idf[g] = math.log(total_movies / count)
-    return pd.Series(idf)
+        with open(self.options.movies, "r") as f:
+            for line in f:
+                parsed = parse_movie_line(line)
+                if parsed is None:
+                    continue
+                movie_id, title, genres = parsed
+                total_movies += 1
+                self.title_map[movie_id] = title
 
+                # Normalized genre vector: 1/sqrt(num_genres) for each genre present
+                vec = [0.0] * NUM_GENRES
+                norm = 1.0 / math.sqrt(len(genres))
+                for g in genres:
+                    idx = GENRE_INDEX.get(g)
+                    if idx is not None:
+                        vec[idx] = norm
+                        genre_counts[idx] += 1
+                self.genre_vectors[movie_id] = vec
 
-def build_user_profiles(ratings, genre_matrix):
-    """Build user genre profiles: sum of (sentiment * genre_vector) for each rated movie."""
-    # Convert ratings to binary sentiment
-    sentiment = ratings.copy()
-    sentiment["sentiment"] = np.where(sentiment["rating"] >= 2.5, 1, -1)
+        # Compute IDF: log(total_movies / genre_count)
+        self.idf = [0.0] * NUM_GENRES
+        for i in range(NUM_GENRES):
+            count = genre_counts[i] if genre_counts[i] > 0 else 1
+            self.idf[i] = math.log(total_movies / count)
 
-    # For each user, accumulate genre scores weighted by sentiment
-    user_profiles = {}
-    for user_id, group in sentiment.groupby("userId"):
-        profile = np.zeros(len(ALL_GENRES))
-        for _, row in group.iterrows():
-            movie_id = row["movieId"]
-            if movie_id in genre_matrix.index:
-                profile += row["sentiment"] * genre_matrix.loc[movie_id].values
-        user_profiles[user_id] = profile
+    # ── Step 1: Build user profiles and score all unrated movies ──
 
-    return pd.DataFrame.from_dict(user_profiles, orient="index", columns=ALL_GENRES)
+    def mapper_init(self):
+        self.load_movies()
 
+    def mapper(self, _, line):
+        """Parse ratings.csv: userId,movieId,rating,timestamp"""
+        parts = line.strip().split(",")
+        if len(parts) < 3:
+            return
+        try:
+            user_id = int(parts[0])
+            movie_id = int(parts[1])
+            rating = float(parts[2])
+        except (ValueError, IndexError):
+            return
+        yield user_id, (movie_id, rating)
 
-def score_movies(user_profiles, genre_matrix, idf, ratings):
-    """Score all unrated movies for each user using IDF-weighted dot product."""
-    # Weight both profiles and movie vectors by IDF
-    idf_values = idf[ALL_GENRES].values
-    weighted_profiles = user_profiles.values * idf_values
-    weighted_movies = genre_matrix.values * idf_values
+    def reducer_init(self):
+        self.load_movies()
 
-    # Get set of rated movies per user
-    rated = ratings.groupby("userId")["movieId"].apply(set).to_dict()
+    def reducer(self, user_id, values):
+        """Build user profile from ratings, then score all unrated movies."""
+        ratings_list = list(values)
+        rated_set = set()
 
-    results = []
-    movie_ids = genre_matrix.index.values
+        # Build user genre profile
+        profile = [0.0] * NUM_GENRES
+        for movie_id, rating in ratings_list:
+            rated_set.add(movie_id)
+            sentiment = 1 if rating >= 2.5 else -1
+            vec = self.genre_vectors.get(movie_id)
+            if vec:
+                for i in range(NUM_GENRES):
+                    profile[i] += sentiment * vec[i]
 
-    for i, user_id in enumerate(user_profiles.index):
-        user_rated = rated.get(user_id, set())
-        # Dot product of user profile with each movie's genre vector
-        scores = weighted_profiles[i] @ weighted_movies.T
-        for j, movie_id in enumerate(movie_ids):
-            if movie_id not in user_rated:
-                results.append((user_id, movie_id, scores[j]))
+        # Score every unrated movie: IDF-weighted dot product
+        for movie_id, vec in self.genre_vectors.items():
+            if movie_id in rated_set:
+                continue
+            score = sum(
+                self.idf[i] * profile[i] * vec[i] for i in range(NUM_GENRES)
+            )
+            title = self.title_map.get(movie_id, "Unknown")
+            sort_key = "%06d_%020.6f" % (user_id, SORT_CONSTANT - score)
+            yield sort_key, "%d\t%d\t%s\t%.6f" % (user_id, movie_id, title, score)
 
-    return results
+    # ── Step 2: Sort pass-through ──
 
+    def reducer_sort(self, _, values):
+        for val in values:
+            yield None, val
 
-def main():
-    movies, ratings = load_data()
-    genre_matrix = build_genre_matrix(movies)
-    idf = compute_idf(movies)
-    user_profiles = build_user_profiles(ratings, genre_matrix)
-    scored = score_movies(user_profiles, genre_matrix, idf, ratings)
-
-    # Build results dataframe
-    results_df = pd.DataFrame(scored, columns=["userId", "movieId", "score"])
-    # Add movie titles
-    title_map = movies.set_index("movieId")["title"].to_dict()
-    results_df["title"] = results_df["movieId"].map(title_map)
-    # Sort by userId ascending, score descending
-    results_df = results_df.sort_values(["userId", "score"], ascending=[True, False])
-
-    # Write output (tab-separated to avoid issues with commas in titles)
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w") as f:
-        for _, row in results_df.iterrows():
-            f.write(f"{row['userId']}\t{row['movieId']}\t{row['title']}\t{row['score']}\n")
-
-    print(f"Content-based recommendations written to {OUTPUT_PATH}")
-    print(f"Total recommendations: {len(results_df)}")
+    def steps(self):
+        return [
+            MRStep(
+                mapper_init=self.mapper_init,
+                mapper=self.mapper,
+                reducer_init=self.reducer_init,
+                reducer=self.reducer,
+            ),
+            MRStep(reducer=self.reducer_sort),
+        ]
 
 
 if __name__ == "__main__":
-    main()
+    ContentBasedMRJob.run()
