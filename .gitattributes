@@ -1,4 +1,0 @@
-output/** filter=lfs diff=lfs merge=lfs -text
-output/* filter=lfs diff=lfs merge=lfs -text
-output/** !text !filter !merge !diff
-output/* !text !filter !merge !diff
