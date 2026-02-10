@@ -7,7 +7,7 @@ from collections import defaultdict
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPT_DIR)
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-WEBSITE_DIR = os.path.join(BASE_DIR, "website")
+WEBSITE_DIR = os.path.join(BASE_DIR, "docs")
 MOVIES_PATH = os.path.join(BASE_DIR, "dataset", "movies.csv")
 
 TOP_N = 50  # top recommendations per user per method

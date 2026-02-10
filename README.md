@@ -1,5 +1,7 @@
 # CineMatch
 
+**[Live Demo](https://hpk369.github.io/CineMatch/)**
+
 A hybrid movie recommendation engine built on **Hadoop MapReduce** using **Python (mrjob)**, implementing three recommendation approaches:
 
 - **Content-Based Filtering** — TF-IDF weighted genre similarity
@@ -82,11 +84,13 @@ Format (tab-separated): `userId\tmovieId\tmovieTitle\tscore` (sorted by userId a
 
 ## Website
 
-An interactive cinema-themed web interface for exploring recommendations:
+An interactive cinema-themed web interface for exploring recommendations.
+
+**Live:** [https://hpk369.github.io/CineMatch/](https://hpk369.github.io/CineMatch/)
 
 ```bash
 python Codes/generate_web_data.py        # Generate JSON from output files
-cd website && python -m http.server      # Serve locally
+cd docs && python -m http.server         # Serve locally
 ```
 
 ## Tech Stack
