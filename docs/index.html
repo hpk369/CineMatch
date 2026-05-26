@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Recommendation System</title>
+    <title>CineMatch — Hadoop Movie Recommendation Engine</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,295 +26,445 @@
             overflow-x: hidden;
         }
 
-        /* ── Hero ── */
-        .hero {
-            min-height: 100vh;
+        /* ── Loading Overlay ── */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: var(--dark);
+            z-index: 999;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            position: relative;
-            background: radial-gradient(ellipse at center, #1a1000 0%, var(--dark) 70%);
+            gap: 20px;
+            transition: opacity 0.5s ease;
         }
 
-        .film-strip {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.04;
-            background-image:
-                repeating-linear-gradient(90deg, transparent, transparent 48px, var(--gold) 48px, var(--gold) 50px),
-                repeating-linear-gradient(0deg, transparent, transparent 48px, var(--gold) 48px, var(--gold) 50px);
-            pointer-events: none;
-        }
+        #loadingOverlay.fade-out { opacity: 0; pointer-events: none; }
 
-        .hero h1 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(3rem, 8vw, 7rem);
-            color: var(--gold);
-            letter-spacing: 4px;
-            text-shadow: 0 0 40px rgba(212,175,55,0.3);
-        }
-
-        .hero p {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            margin-top: 12px;
-            font-weight: 300;
-        }
-
-        .scroll-hint {
-            position: absolute;
-            bottom: 40px;
-            animation: bounce 2s infinite;
-            color: var(--gold);
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(10px); }
-        }
-
-        /* ── Clapperboard ── */
-        .clapperboard {
-            position: relative;
-            width: 180px;
-            height: 160px;
-            margin-bottom: 24px;
-            cursor: pointer;
-        }
-
-        .clap-body {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 164px;
-        }
-
-        /* Board (lower section with text) */
-        .clap-board {
-            width: 100%;
-            height: 90px;
-            background: var(--dark-card);
-            border: 2px solid var(--gold);
-            border-radius: 0 0 6px 6px;
-            overflow: hidden;
-        }
-
-        .clap-board-inner {
-            padding: 10px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .clap-board-line {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 0.7rem;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-
-        .clap-board-line span:first-child {
-            min-width: 40px;
-            color: var(--text-muted);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.6rem;
-        }
-
-        .clap-board-line .line-val {
-            flex: 1;
-            height: 1px;
-            background: var(--dark-border);
-        }
-
-        /* Sticks (the striped clapper bars) */
-        .clap-sticks {
-            position: relative;
-            width: 100%;
-            height: 30px;
-        }
-
-        .clap-stick {
-            position: absolute;
-            left: 0;
-            width: 100%;
-            height: 28px;
-            border: 2px solid var(--gold);
-        }
-
-        .clap-stick-bottom {
-            bottom: 0;
-            background: repeating-linear-gradient(
-                -55deg,
-                var(--dark-card),
-                var(--dark-card) 12px,
-                var(--gold) 12px,
-                var(--gold) 24px
-            );
-            border-radius: 4px 4px 0 0;
-            z-index: 1;
-        }
-
-        .clap-stick-top {
-            bottom: 0;
-            background: repeating-linear-gradient(
-                -55deg,
-                var(--gold),
-                var(--gold) 12px,
-                var(--dark) 12px,
-                var(--dark) 24px
-            );
-            border-radius: 4px 4px 0 0;
-            z-index: 2;
-            transform-origin: 8px bottom;
-            animation: clap 3s ease-in-out infinite;
-        }
-
-        @keyframes clap {
-            0%, 60%, 100% { transform: rotate(0deg); }
-            8% { transform: rotate(-32deg); }
-            20% { transform: rotate(0deg); }
-            26% { transform: rotate(-18deg); }
-            36% { transform: rotate(0deg); }
-        }
-
-        /* ── Sections ── */
-        section { padding: 80px 24px; max-width: 1200px; margin: 0 auto; }
-
-        .section-title {
+        .loader-logo {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 2.5rem;
+            letter-spacing: 4px;
             color: var(--gold);
-            letter-spacing: 2px;
-            margin-bottom: 40px;
+        }
+
+        .loader-dots { display: flex; gap: 8px; }
+        .loader-dots span {
+            width: 8px; height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: dotpulse 1.2s infinite;
+        }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotpulse {
+            0%, 100% { opacity: 0.25; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .loader-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
             text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
         }
 
-        /* ── Algorithm Cards ── */
-        .algo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-        }
-
-        .algo-card {
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 32px;
-            transition: border-color 0.3s, transform 0.3s;
-        }
-
-        .algo-card:hover {
-            border-color: var(--gold);
-            transform: translateY(-4px);
-        }
-
-        .algo-card .icon { font-size: 2.5rem; margin-bottom: 16px; }
-        .algo-card h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: var(--gold-light);
-            letter-spacing: 1px;
-            margin-bottom: 12px;
-        }
-        .algo-card p { font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); }
-        .algo-card .tag {
-            display: inline-block;
-            margin-top: 16px;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            border: 1px solid var(--gold);
-            color: var(--gold);
-            border-radius: 20px;
-        }
-
-        /* ── Demo Section ── */
-        #demo { padding-bottom: 120px; }
-
-        .demo-steps {
+        /* ── Nav ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(10,10,10,0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--dark-border);
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 32px;
+            justify-content: space-between;
+            padding: 0 32px;
+            height: 56px;
         }
 
-        .step-card {
-            background: var(--dark-card);
-            border: 1px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 32px;
-            width: 100%;
-            max-width: 700px;
-            transition: opacity 0.4s, transform 0.4s;
-        }
-
-        .hidden { display: none !important; }
-
-        .step-label {
+        .nav-logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1rem;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
             color: var(--gold);
-            letter-spacing: 2px;
-            margin-bottom: 8px;
         }
 
-        .step-card h3 {
-            font-size: 1.2rem;
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border: 1px solid var(--dark-border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover { border-color: var(--gold); color: var(--gold); }
+        .nav-link svg { width: 13px; height: 13px; fill: currentColor; }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 64px 32px 56px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.75rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
             margin-bottom: 16px;
             font-weight: 500;
         }
 
-        /* User ID input */
-        .user-input-row {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .user-input-row input {
-            flex: 1;
-            padding: 12px 16px;
-            background: var(--dark-surface);
-            border: 1px solid var(--dark-border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .user-input-row input:focus { border-color: var(--gold); }
-
-        /* Genre chips */
-        .genre-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(3rem, 7vw, 5.5rem);
+            color: var(--gold);
+            letter-spacing: 3px;
+            line-height: 1;
             margin-bottom: 20px;
         }
 
-        .genre-chip {
-            padding: 8px 18px;
+        .hero-desc {
+            font-size: 1.05rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            max-width: 640px;
+            margin-bottom: 28px;
+            font-weight: 300;
+        }
+
+        .tech-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 36px;
+        }
+
+        .tech-pill {
+            padding: 5px 14px;
             border: 1px solid var(--dark-border);
-            border-radius: 24px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
             background: var(--dark-surface);
+        }
+
+        .tech-pill.highlight {
+            border-color: rgba(212,175,55,0.4);
+            color: var(--gold);
+            background: rgba(212,175,55,0.06);
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-val {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.8rem;
+            color: var(--text);
+            letter-spacing: 1px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ── Demo Section ── */
+        .demo-section {
+            background: var(--dark-surface);
+            border-top: 1px solid var(--dark-border);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 52px 32px;
+        }
+
+        .demo-inner { max-width: 960px; margin: 0 auto; }
+
+        .demo-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .demo-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
+            color: var(--gold);
+        }
+
+        .demo-live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: #4ade80;
+            background: rgba(74,222,128,0.08);
+            border: 1px solid rgba(74,222,128,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .live-dot {
+            width: 6px; height: 6px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: livepulse 2s infinite;
+        }
+
+        @keyframes livepulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* ── User Picker ── */
+        .user-picker-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+
+        .user-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .user-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #userIdInput {
+            width: 100px;
+            padding: 9px 14px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+        }
+
+        #userIdInput:focus { border-color: var(--gold); }
+        #userIdInput.error { border-color: #f87171; }
+
+        .btn-random {
+            padding: 9px 16px;
+            background: transparent;
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-random:hover { border-color: var(--gold); color: var(--gold); }
+
+        .user-hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .user-hint .hint-error { color: #f87171; }
+
+        /* ── User Explainer Card ── */
+        .user-explainer {
+            flex: 1;
+            min-width: 260px;
+            background: rgba(212,175,55,0.04);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 10px;
+            padding: 16px 20px;
+        }
+
+        .user-explainer-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .user-explainer p {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .user-explainer strong { color: var(--text); font-weight: 500; }
+
+        .suggest-users {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .suggest-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .suggest-btn {
+            padding: 3px 10px;
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            background: var(--dark-card);
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .suggest-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* ── Method Tabs ── */
+        .method-section { margin-bottom: 24px; }
+
+        .tabs-row {
+            display: flex;
+            gap: 4px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 10px;
+            padding: 4px;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+
+        .method-tab {
+            padding: 8px 20px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .method-tab.active {
+            background: var(--gold);
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        /* Method info card */
+        .method-info {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .method-info-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .method-info-body { flex: 1; }
+
+        .method-info-title {
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .method-info-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .method-info-expect {
+            font-size: 0.8rem;
+            color: var(--gold);
+            background: rgba(212,175,55,0.06);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 6px;
+            padding: 6px 12px;
+            line-height: 1.5;
+        }
+
+        .method-info-expect strong { color: var(--gold-light); }
+
+        /* ── Genre Filter ── */
+        .genre-section { margin-bottom: 24px; }
+
+        .genre-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .genre-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+        .genre-chip {
+            padding: 5px 14px;
+            border: 1px solid var(--dark-border);
+            border-radius: 20px;
+            background: var(--dark-card);
             color: var(--text-muted);
             cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
+            font-size: 0.8rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s;
             user-select: none;
         }
 
         .genre-chip:hover { border-color: var(--gold); color: var(--text); }
+
         .genre-chip.selected {
             background: var(--gold);
             color: var(--dark);
@@ -322,540 +472,796 @@
             font-weight: 500;
         }
 
-        .surprise-btn {
-            padding: 8px 20px;
-            border: 1px dashed var(--gold);
-            border-radius: 24px;
-            background: transparent;
-            color: var(--gold);
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-        }
-
-        .surprise-btn:hover { background: rgba(212,175,55,0.1); }
-
-        /* Buttons */
-        .btn-gold {
-            padding: 12px 32px;
-            background: var(--gold);
-            color: var(--dark);
+        .clear-genres-btn {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
             cursor: pointer;
-            transition: background 0.3s, transform 0.2s;
-        }
-
-        .btn-gold:hover { background: var(--gold-light); transform: scale(1.02); }
-        .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-        .btn-outline {
-            padding: 10px 24px;
-            background: transparent;
-            color: var(--gold);
-            border: 1px solid var(--gold);
-            border-radius: 8px;
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: background 0.3s;
+            transition: color 0.15s;
+            display: none;
         }
 
-        .btn-outline:hover { background: rgba(212,175,55,0.1); }
+        .clear-genres-btn.visible { display: inline; }
+        .clear-genres-btn:hover { color: var(--gold); }
 
-        /* Results */
-        .results-area { width: 100%; max-width: 1200px; }
-
+        /* ── Results ── */
         .results-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            justify-content: space-between;
+            margin-bottom: 12px;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 6px;
         }
 
-        .results-header h3 {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.8rem;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
+        .results-count { font-size: 0.8rem; color: var(--text-muted); }
 
-        .method-tabs {
-            display: flex;
-            gap: 8px;
-        }
-
-        .method-tab {
-            padding: 8px 20px;
-            border: 1px solid var(--dark-border);
-            border-radius: 8px;
-            background: var(--dark-surface);
+        .results-note {
+            font-size: 0.75rem;
             color: var(--text-muted);
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
+            font-style: italic;
         }
 
-        .method-tab.active {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: rgba(212,175,55,0.08);
-        }
-
-        .movie-list { display: flex; flex-direction: column; gap: 12px; }
+        .movie-list { display: flex; flex-direction: column; gap: 8px; }
 
         .movie-card {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
-            border-radius: 10px;
-            padding: 16px 20px;
-            transition: border-color 0.3s;
+            border-radius: 8px;
+            padding: 14px 18px;
+            transition: border-color 0.2s;
         }
 
-        .movie-card:hover { border-color: var(--gold); }
+        .movie-card:hover { border-color: rgba(212,175,55,0.4); }
 
         .movie-rank {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem;
-            color: var(--gold);
-            min-width: 36px;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            min-width: 28px;
             text-align: center;
         }
 
-        .movie-info { flex: 1; }
-        .movie-title { font-weight: 500; font-size: 1rem; }
+        .movie-rank.top3 { color: var(--gold); }
+
+        .movie-info { flex: 1; min-width: 0; }
+
+        .movie-title {
+            font-weight: 500;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .movie-genres {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 6px;
+            gap: 4px;
+            margin-top: 5px;
         }
 
         .movie-genre-tag {
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 12px;
+            font-size: 0.68rem;
+            padding: 2px 7px;
+            border-radius: 10px;
             background: var(--dark-surface);
             color: var(--text-muted);
             border: 1px solid var(--dark-border);
         }
 
-        .movie-genre-tag.match {
-            border-color: var(--gold);
-            color: var(--gold);
+        .movie-genre-tag.match { border-color: rgba(212,175,55,0.5); color: var(--gold); }
+
+        .score-wrap {
+            text-align: right;
+            flex-shrink: 0;
         }
 
         .movie-score {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: var(--text-muted);
+        }
+
+        .score-label {
+            font-size: 0.65rem;
+            color: var(--dark-border);
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .no-results {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 28px 24px;
             text-align: center;
-            color: var(--text-muted);
-            padding: 40px;
-            font-size: 0.95rem;
         }
 
-        /* ── Architecture ── */
-        .pipeline {
+        .no-results p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px; }
+        .no-results small { font-size: 0.78rem; color: var(--text-muted); opacity: 0.6; }
+
+        #resultsLoader {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 32px 24px;
+            text-align: center;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+        }
+
+        /* ── How It Works ── */
+        .content-section { padding: 64px 32px; max-width: 960px; margin: 0 auto; }
+
+        .section-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--gold);
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .algo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .algo-card {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 10px;
+            padding: 24px;
+            transition: border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .algo-card:hover { border-color: rgba(212,175,55,0.35); }
+
+        .algo-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .algo-icon {
+            width: 36px; height: 36px;
+            background: rgba(212,175,55,0.1);
+            border: 1px solid rgba(212,175,55,0.25);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .algo-card h3 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.2rem;
+            color: var(--gold-light);
+            letter-spacing: 1px;
+        }
+
+        .algo-card p {
+            font-size: 0.84rem;
+            line-height: 1.65;
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .algo-expect {
+            margin-top: 14px;
+            padding: 10px 12px;
+            background: var(--dark-surface);
+            border-left: 2px solid var(--gold);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .algo-expect-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 4px;
+        }
+
+        .algo-expect p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .algo-tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 3px 10px;
+            font-size: 0.7rem;
+            border: 1px solid rgba(212,175,55,0.35);
+            color: var(--gold);
+            border-radius: 12px;
+        }
+
+        /* ── Architecture ── */
+        .arch-section {
+            background: var(--dark-surface);
+            border-top: 1px solid var(--dark-border);
+            padding: 64px 32px;
+        }
+
+        .arch-inner { max-width: 960px; margin: 0 auto; }
+
+        .pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
             flex-wrap: wrap;
+            margin-bottom: 32px;
         }
 
         .pipeline-node {
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
-            border-radius: 10px;
-            padding: 20px 28px;
+            border-radius: 8px;
+            padding: 14px 20px;
             text-align: center;
-            min-width: 140px;
+            min-width: 120px;
         }
 
-        .pipeline-node .node-icon { font-size: 2rem; margin-bottom: 8px; }
-        .pipeline-node .node-label { font-size: 0.85rem; color: var(--text-muted); }
-        .pipeline-node .node-title { font-weight: 500; font-size: 0.95rem; margin-top: 4px; }
-
-        .pipeline-arrow { color: var(--gold); font-size: 1.5rem; }
-
-        .tech-badges {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 32px;
-        }
-
-        .tech-badge {
-            padding: 6px 16px;
-            border: 1px solid var(--dark-border);
-            border-radius: 20px;
-            font-size: 0.8rem;
+        .pipeline-node .node-label {
+            font-size: 0.68rem;
             color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
+
+        .pipeline-node .node-title {
+            font-weight: 500;
+            font-size: 0.88rem;
+            margin-top: 4px;
+        }
+
+        .pipeline-arrow { color: var(--gold); font-size: 1.2rem; }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .tech-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+
+        .tech-item-icon { font-size: 1.2rem; margin-top: 1px; flex-shrink: 0; }
+        .tech-item-name { font-weight: 500; font-size: 0.88rem; margin-bottom: 2px; }
+        .tech-item-desc { font-size: 0.75rem; color: var(--text-muted); }
 
         /* ── Footer ── */
         footer {
             text-align: center;
-            padding: 40px 24px;
+            padding: 32px 24px;
             border-top: 1px solid var(--dark-border);
             color: var(--text-muted);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
         }
 
         footer a { color: var(--gold); text-decoration: none; }
         footer a:hover { text-decoration: underline; }
 
-        /* ── Loading ── */
-        .loader {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 40px;
-            color: var(--text-muted);
-        }
-
-        .loader .dot {
-            width: 8px; height: 8px;
-            background: var(--gold);
-            border-radius: 50%;
-            animation: pulse 1.2s infinite;
-        }
-
-        .loader .dot:nth-child(2) { animation-delay: 0.2s; }
-        .loader .dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.2); }
-        }
-
         /* ── Responsive ── */
-        @media (max-width: 600px) {
-            .user-input-row { flex-direction: column; }
-            .pipeline { flex-direction: column; }
+        @media (max-width: 640px) {
+            nav { padding: 0 16px; }
+            .hero { padding: 40px 16px 36px; }
+            .demo-section { padding: 36px 16px; }
+            .content-section { padding: 48px 16px; }
+            .arch-section { padding: 48px 16px; }
+            .hero-stats { gap: 24px; }
+            .user-picker-row { flex-direction: column; }
+            .tabs-row { width: 100%; overflow-x: auto; }
+            .pipeline { flex-direction: column; align-items: flex-start; }
             .pipeline-arrow { transform: rotate(90deg); }
-            .method-tabs { flex-wrap: wrap; }
         }
     </style>
 </head>
 <body>
 
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="loader-logo">CineMatch</div>
+    <div class="loader-dots">
+        <span></span><span></span><span></span>
+    </div>
+    <div class="loader-text">Loading 100,004 ratings across 671 users…<br>This may take a few seconds.</div>
+</div>
+
+<!-- Nav -->
+<nav>
+    <span class="nav-logo">CineMatch</span>
+    <div class="nav-links">
+        <a class="nav-link" href="https://github.com/hpk369/CineMatch" target="_blank" rel="noopener">
+            <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
 <!-- Hero -->
 <div class="hero">
-    <div class="film-strip"></div>
-    <div class="clapperboard" onclick="var t=this.querySelector('.clap-stick-top');t.style.animation='none';void t.offsetWidth;t.style.animation='clap 3s ease-in-out infinite';">
-        <div class="clap-body">
-            <div class="clap-sticks">
-                <div class="clap-stick clap-stick-bottom"></div>
-                <div class="clap-stick clap-stick-top"></div>
+    <div class="hero-eyebrow">Portfolio Project</div>
+    <h1>CineMatch</h1>
+    <p class="hero-desc">
+        Hybrid movie recommendation engine built on Hadoop MapReduce. Implements three recommendation approaches — TF-IDF content similarity, co-occurrence collaborative filtering, and score-fusion hybrid — trained on the MovieLens 100K dataset.
+    </p>
+    <div class="tech-pills">
+        <span class="tech-pill highlight">Python</span>
+        <span class="tech-pill highlight">Hadoop MapReduce</span>
+        <span class="tech-pill highlight">mrjob</span>
+        <span class="tech-pill">TF-IDF</span>
+        <span class="tech-pill">Co-occurrence Matrix</span>
+        <span class="tech-pill">MovieLens 100K</span>
+    </div>
+    <div class="hero-stats">
+        <div class="stat">
+            <div class="stat-val">671</div>
+            <div class="stat-label">Users</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">9,125</div>
+            <div class="stat-label">Movies</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">100K</div>
+            <div class="stat-label">Ratings</div>
+        </div>
+        <div class="stat">
+            <div class="stat-val">3</div>
+            <div class="stat-label">Algorithms</div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Demo -->
+<div class="demo-section">
+    <div class="demo-inner">
+
+        <div class="demo-header">
+            <h2>Live Demo</h2>
+            <span class="demo-live-badge"><span class="live-dot"></span> Pre-computed from MapReduce output</span>
+        </div>
+
+        <!-- User Picker + Explainer -->
+        <div class="user-picker-row">
+            <div class="user-picker">
+                <div class="field-label">User ID</div>
+                <div class="user-input-group">
+                    <input type="number" id="userIdInput" min="1" max="671" value="1" />
+                    <button class="btn-random" onclick="pickRandom()">&#127922; Random</button>
+                </div>
+                <div class="user-hint" id="userHint">Any value from 1 to 671</div>
             </div>
-            <div class="clap-board">
-                <div class="clap-board-inner">
-                    <div class="clap-board-line"><span>PROD</span> MovieLens <span class="line-val"></span></div>
-                    <div class="clap-board-line"><span>DIR</span> Python <span class="line-val"></span></div>
-                    <div class="clap-board-line"><span>SCENE</span> Hybrid Rec <span class="line-val"></span></div>
-                    <div class="clap-board-line"><span>TAKE</span> 2 <span class="line-val"></span></div>
+
+            <div class="user-explainer">
+                <div class="user-explainer-title">&#8505;&#65039; What are User IDs?</div>
+                <p>
+                    These are <strong>real, anonymous movie fans</strong> from the
+                    <strong>MovieLens 100K dataset</strong>, collected by the University of
+                    Minnesota in 1997–1998. Each of the <strong>671 users</strong> rated at least
+                    20 movies — their identities are never revealed, only their ratings.
+                    Changing the User ID shows you what that person's personalized
+                    recommendations would look like under each algorithm.
+                </p>
+                <div class="suggest-users">
+                    <span class="suggest-label">Try:</span>
+                    <button class="suggest-btn" onclick="setUser(1)">User 1</button>
+                    <button class="suggest-btn" onclick="setUser(42)">User 42</button>
+                    <button class="suggest-btn" onclick="setUser(200)">User 200</button>
+                    <button class="suggest-btn" onclick="setUser(500)">User 500</button>
                 </div>
             </div>
         </div>
-    </div>
-    <h1>Movie Recommendation System</h1>
-    <p>Content-Based &bull; Collaborative Filtering &bull; Hybrid</p>
-    <div class="scroll-hint" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">&#8595;</div>
-</div>
 
-<!-- How It Works -->
-<section id="how">
-    <h2 class="section-title">How It Works</h2>
-    <div class="algo-grid">
-        <div class="algo-card">
-            <div class="icon">&#127916;</div>
-            <h3>Content-Based</h3>
-            <p>Builds a user taste profile from genre preferences using TF-IDF weighting. Recommends movies with similar genre vectors to what you've enjoyed before.</p>
-            <span class="tag">Genre Matching</span>
-        </div>
-        <div class="algo-card">
-            <div class="icon">&#128101;</div>
-            <h3>Collaborative</h3>
-            <p>Finds movies that frequently co-occur with your rated films across all users. Leverages collective viewing patterns to surface hidden picks.</p>
-            <span class="tag">Co-occurrence</span>
-        </div>
-        <div class="algo-card">
-            <div class="icon">&#9878;</div>
-            <h3>Hybrid</h3>
-            <p>Multiplies content-based and collaborative scores to combine both signals. Surfaces movies that match your taste AND are popular among similar viewers.</p>
-            <span class="tag">Combined Score</span>
-        </div>
-    </div>
-</section>
-
-<!-- Demo -->
-<section id="demo">
-    <h2 class="section-title">Try It Out</h2>
-    <div class="demo-steps" id="demoSteps">
-
-        <!-- Step 1: User ID -->
-        <div class="step-card" id="step1">
-            <div class="step-label">Step 1</div>
-            <h3>Enter a User ID</h3>
-            <p style="color:var(--text-muted); margin-bottom:16px; font-size:0.9rem;">Pick a user from the MovieLens dataset (1&ndash;671)</p>
-            <div class="user-input-row">
-                <input type="number" id="userIdInput" min="1" max="671" value="1" placeholder="e.g. 1">
-                <button class="btn-gold" id="step1Btn" onclick="goToStep2()">Next</button>
+        <!-- Algorithm Tabs + Info -->
+        <div class="method-section">
+            <div class="field-label" style="margin-bottom:10px;">Algorithm</div>
+            <div class="tabs-row" id="methodTabs">
+                <button class="method-tab active" data-method="content" onclick="switchMethod('content')">Content-Based</button>
+                <button class="method-tab" data-method="collaborative" onclick="switchMethod('collaborative')">Collaborative</button>
+                <button class="method-tab" data-method="hybrid" onclick="switchMethod('hybrid')">Hybrid</button>
+            </div>
+            <div class="method-info" id="methodInfo">
+                <!-- populated by JS -->
             </div>
         </div>
 
-        <!-- Step 2: Genre -->
-        <div class="step-card hidden" id="step2">
-            <div class="step-label">Step 2</div>
-            <h3>What genre are you in the mood for?</h3>
-            <p style="color:var(--text-muted); margin-bottom:16px; font-size:0.9rem;">Select one or more genres to filter by, or let us surprise you.</p>
-            <div class="genre-grid" id="genreGrid"></div>
-            <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
-                <button class="surprise-btn" onclick="surpriseMe()">&#127922; Surprise Me!</button>
-                <button class="btn-outline" onclick="goBackToStep1()">&#8592; Back</button>
-                <button class="btn-gold" id="step2Btn" onclick="showResults()">Show Recommendations</button>
+        <!-- Genre Filter -->
+        <div class="genre-section">
+            <div class="genre-section-header">
+                <span class="field-label">Filter by Genre</span>
+                <span style="font-size:0.75rem;color:var(--text-muted);">— optional, narrows results to selected genres</span>
+                <button class="clear-genres-btn" id="clearGenresBtn" onclick="clearGenres()">Clear</button>
             </div>
+            <div class="genre-chips" id="genreChips"></div>
         </div>
 
         <!-- Results -->
-        <div class="results-area hidden" id="resultsArea">
-            <div class="results-header">
-                <h3 id="resultsTitle">Recommendations</h3>
-                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <div class="method-tabs" id="methodTabs">
-                        <button class="method-tab active" data-method="hybrid" onclick="switchMethod('hybrid')">Hybrid</button>
-                        <button class="method-tab" data-method="content" onclick="switchMethod('content')">Content-Based</button>
-                        <button class="method-tab" data-method="collaborative" onclick="switchMethod('collaborative')">Collaborative</button>
-                    </div>
-                    <button class="btn-outline" onclick="startOver()">Start Over</button>
-                </div>
-            </div>
-            <div class="movie-list" id="movieList"></div>
+        <div class="results-header">
+            <span class="results-count" id="resultsCount"></span>
+            <span class="results-note" id="resultsNote"></span>
         </div>
-    </div>
+        <div id="resultsLoader">Loading data…</div>
+        <div id="movieList" style="display:none;"></div>
 
-    <!-- Loading -->
-    <div class="loader hidden" id="loader">
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <span>Loading recommendations...</span>
     </div>
-</section>
+</div>
+
+<!-- How It Works -->
+<div class="content-section">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">
+        Each algorithm approaches the recommendation problem from a different angle.
+        Understanding the differences helps you interpret what you see in the demo above.
+    </p>
+    <div class="algo-grid">
+
+        <div class="algo-card">
+            <div class="algo-card-header">
+                <div class="algo-icon">🎬</div>
+                <h3>Content-Based</h3>
+            </div>
+            <p>Builds a personal genre profile for each user by TF-IDF-weighting every genre they've rated. High-frequency genres get lower weight (like stopwords in NLP) — rare genre preferences count more. Then scores all unrated movies by cosine similarity to that profile. Runs as two MapReduce steps.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>Results closely reflect the user's genre history. A Drama fan gets Drama-heavy picks. Results are predictable and explainable but may feel repetitive — it won't suggest something outside your usual taste.</p>
+            </div>
+            <span class="algo-tag">TF-IDF · Genre Similarity · 2 MR Steps</span>
+        </div>
+
+        <div class="algo-card">
+            <div class="algo-card-header">
+                <div class="algo-icon">👥</div>
+                <h3>Collaborative</h3>
+            </div>
+            <p>Builds a co-occurrence matrix: for every pair of movies rated by the same user, increments their co-occurrence count. Then for each user, scores unrated movies by the total co-occurrence weight with their rated films. Two MapReduce passes: one to build the matrix, one to compute scores.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>More eclectic and surprising picks. This method doesn't know about genres — it only knows what people watched together. You may see recommendations that cross genre lines but reflect real viewing patterns.</p>
+            </div>
+            <span class="algo-tag">Co-occurrence Matrix · 2 MR Steps</span>
+        </div>
+
+        <div class="algo-card">
+            <div class="algo-card-header">
+                <div class="algo-icon">⚡</div>
+                <h3>Hybrid</h3>
+            </div>
+            <p>Multiplies the content-based and collaborative scores for each (user, movie) pair. A movie must score well on <em>both</em> signals to rank here — pure genre matches that aren't popular in co-occurrence get filtered out, and vice versa. One final MapReduce step joins and multiplies the two output files.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>The strongest, most balanced recommendations. These movies fit your genre taste AND align with crowd wisdom. Only available for users who have scores in both methods — try users 1–40 for best results.</p>
+            </div>
+            <span class="algo-tag">Score Fusion · Multiplication</span>
+        </div>
+
+    </div>
+</div>
 
 <!-- Architecture -->
-<section id="arch">
-    <h2 class="section-title">Architecture</h2>
-    <div class="pipeline">
-        <div class="pipeline-node">
-            <div class="node-icon">&#128230;</div>
-            <div class="node-label">Input</div>
-            <div class="node-title">MovieLens 100K</div>
+<div class="arch-section">
+    <div class="arch-inner">
+        <h2 class="section-title">Architecture</h2>
+        <p class="section-subtitle" style="margin-bottom:28px;">
+            All processing runs as Python MapReduce jobs via mrjob, executed on a Hadoop cluster (HDFS + YARN). The pipeline is fully parallelisable across the cluster.
+        </p>
+        <div class="pipeline">
+            <div class="pipeline-node">
+                <div class="node-label">Input</div>
+                <div class="node-title">MovieLens 100K</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-node">
+                <div class="node-label">MRStep 1–2</div>
+                <div class="node-title">Content-Based</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-node">
+                <div class="node-label">MRStep 1–2</div>
+                <div class="node-title">Co-occurrence</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-node">
+                <div class="node-label">MRStep 1–2</div>
+                <div class="node-title">Collaborative</div>
+            </div>
+            <div class="pipeline-arrow">→</div>
+            <div class="pipeline-node">
+                <div class="node-label">MRStep</div>
+                <div class="node-title">Hybrid Fusion</div>
+            </div>
         </div>
-        <div class="pipeline-arrow">&#10140;</div>
-        <div class="pipeline-node">
-            <div class="node-icon">&#9881;</div>
-            <div class="node-label">Processing</div>
-            <div class="node-title">Python + pandas</div>
-        </div>
-        <div class="pipeline-arrow">&#10140;</div>
-        <div class="pipeline-node">
-            <div class="node-icon">&#127916;</div>
-            <div class="node-label">Content</div>
-            <div class="node-title">TF-IDF Genres</div>
-        </div>
-        <div class="pipeline-arrow">&#10140;</div>
-        <div class="pipeline-node">
-            <div class="node-icon">&#128101;</div>
-            <div class="node-label">Collaborative</div>
-            <div class="node-title">Co-occurrence</div>
-        </div>
-        <div class="pipeline-arrow">&#10140;</div>
-        <div class="pipeline-node">
-            <div class="node-icon">&#9878;</div>
-            <div class="node-label">Hybrid</div>
-            <div class="node-title">Score Fusion</div>
+        <div class="tech-grid">
+            <div class="tech-item">
+                <span class="tech-item-icon">🐘</span>
+                <div>
+                    <div class="tech-item-name">Hadoop MapReduce</div>
+                    <div class="tech-item-desc">HDFS + YARN cluster execution</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-item-icon">🐍</span>
+                <div>
+                    <div class="tech-item-name">Python + mrjob</div>
+                    <div class="tech-item-desc">MapReduce jobs as Python classes</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-item-icon">📐</span>
+                <div>
+                    <div class="tech-item-name">TF-IDF Vectors</div>
+                    <div class="tech-item-desc">Genre-weighted user taste profiles</div>
+                </div>
+            </div>
+            <div class="tech-item">
+                <span class="tech-item-icon">📊</span>
+                <div>
+                    <div class="tech-item-name">MovieLens 100K</div>
+                    <div class="tech-item-desc">100,004 ratings from 671 users</div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="tech-badges">
-        <span class="tech-badge">Python 3</span>
-        <span class="tech-badge">pandas</span>
-        <span class="tech-badge">numpy</span>
-        <span class="tech-badge">MovieLens</span>
-    </div>
-</section>
+</div>
 
 <!-- Footer -->
 <footer>
-    <p>Built with Python &bull; Data from <a href="https://grouplens.org/datasets/movielens/" target="_blank" rel="noopener">MovieLens</a></p>
+    <p>Built with Python &amp; Hadoop &bull; Data from <a href="https://grouplens.org/datasets/movielens/" target="_blank" rel="noopener">MovieLens</a> &bull; <a href="https://github.com/hpk369/CineMatch" target="_blank" rel="noopener">View Source on GitHub</a></p>
 </footer>
 
 <script>
     let DATA = null;
     let selectedGenres = new Set();
-    let currentUserId = "1";
-    let currentMethod = "hybrid";
+    let currentUser = '1';
+    let currentMethod = 'content';
 
-    // Load data on page load
-    fetch("data.json")
+    const METHOD_INFO = {
+        content: {
+            icon: '🎬',
+            title: 'Content-Based Filtering',
+            desc: 'Scores movies by how well their genres match this user\'s TF-IDF taste profile — built from every film they\'ve ever rated.',
+            expect: '<strong>Expect:</strong> Genre-consistent picks that reflect what this user has historically enjoyed. Results are predictable and tightly tied to their rating history.'
+        },
+        collaborative: {
+            icon: '👥',
+            title: 'Collaborative Filtering',
+            desc: 'Scores unrated movies by their co-occurrence with films this user has already rated, aggregated across the entire 671-user dataset.',
+            expect: '<strong>Expect:</strong> Potentially surprising picks that cross genre lines. This method doesn\'t see genres — it only knows what people watched together.'
+        },
+        hybrid: {
+            icon: '⚡',
+            title: 'Hybrid (Score Fusion)',
+            desc: 'Multiplies content-based and collaborative scores. A movie must perform well on both signals to rank here.',
+            expect: '<strong>Expect:</strong> The most balanced recommendations. Note: only users 1–40 have hybrid scores — both content and collaborative data are required for this method.'
+        }
+    };
+
+    // Kick off data load immediately
+    fetch('data.json')
         .then(r => r.json())
-        .then(d => { DATA = d; buildGenreChips(); })
+        .then(d => {
+            DATA = d;
+            initDemo();
+            dismissLoader();
+        })
         .catch(() => {
-            document.getElementById("loader").classList.remove("hidden");
-            document.getElementById("loader").innerHTML =
-                '<span style="color:#ff6961;">Failed to load data.json. Run generate_web_data.py first.</span>';
+            document.getElementById('loadingOverlay').innerHTML =
+                '<div style="color:#f87171;text-align:center;padding:24px;">Failed to load data.json.<br><small>Run generate_web_data.py first.</small></div>';
         });
 
-    function buildGenreChips() {
-        const grid = document.getElementById("genreGrid");
+    function dismissLoader() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 600);
+    }
+
+    function initDemo() {
+        // Build genre chips
+        const chips = document.getElementById('genreChips');
         DATA.genres.forEach(g => {
-            const chip = document.createElement("button");
-            chip.className = "genre-chip";
-            chip.textContent = g;
-            chip.onclick = () => toggleGenre(chip, g);
-            grid.appendChild(chip);
-        });
-    }
-
-    function toggleGenre(chip, genre) {
-        if (selectedGenres.has(genre)) {
-            selectedGenres.delete(genre);
-            chip.classList.remove("selected");
-        } else {
-            selectedGenres.add(genre);
-            chip.classList.add("selected");
-        }
-    }
-
-    function surpriseMe() {
-        // Clear current selections
-        selectedGenres.clear();
-        document.querySelectorAll(".genre-chip").forEach(c => c.classList.remove("selected"));
-
-        // Pick 1-3 random genres
-        const shuffled = [...DATA.genres].sort(() => Math.random() - 0.5);
-        const count = Math.floor(Math.random() * 3) + 1;
-        shuffled.slice(0, count).forEach(g => {
-            selectedGenres.add(g);
-            document.querySelectorAll(".genre-chip").forEach(c => {
-                if (c.textContent === g) c.classList.add("selected");
-            });
+            const btn = document.createElement('button');
+            btn.className = 'genre-chip';
+            btn.textContent = g;
+            btn.onclick = () => toggleGenre(btn, g);
+            chips.appendChild(btn);
         });
 
-        showResults();
+        // Set up user input listener
+        const input = document.getElementById('userIdInput');
+        input.addEventListener('input', () => {
+            const val = parseInt(input.value);
+            if (!isNaN(val) && DATA.users.includes(String(val))) {
+                input.classList.remove('error');
+                currentUser = String(val);
+                document.getElementById('userHint').innerHTML = '';
+                renderResults();
+            } else if (input.value !== '') {
+                input.classList.add('error');
+                document.getElementById('userHint').innerHTML =
+                    '<span class="hint-error">Enter a number between 1 and 671</span>';
+            }
+        });
+
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+
+        updateMethodInfo();
+        renderResults();
     }
 
-    function goToStep2() {
-        const input = document.getElementById("userIdInput");
-        const val = parseInt(input.value);
-        if (!DATA || !DATA.users.includes(String(val))) {
-            input.style.borderColor = "#ff6961";
-            return;
-        }
-        input.style.borderColor = "";
-        currentUserId = String(val);
-        document.getElementById("step1").classList.add("hidden");
-        document.getElementById("step2").classList.remove("hidden");
+    function setUser(id) {
+        const input = document.getElementById('userIdInput');
+        input.value = id;
+        input.classList.remove('error');
+        currentUser = String(id);
+        document.getElementById('userHint').innerHTML = '';
+        renderResults();
     }
 
-    function goBackToStep1() {
-        document.getElementById("step2").classList.add("hidden");
-        document.getElementById("step1").classList.remove("hidden");
-        document.getElementById("resultsArea").classList.add("hidden");
-    }
-
-    function startOver() {
-        selectedGenres.clear();
-        document.querySelectorAll(".genre-chip").forEach(c => c.classList.remove("selected"));
-        document.getElementById("resultsArea").classList.add("hidden");
-        document.getElementById("step2").classList.add("hidden");
-        document.getElementById("step1").classList.remove("hidden");
+    function pickRandom() {
+        if (!DATA) return;
+        const pool = currentMethod === 'hybrid'
+            ? Object.keys(DATA.hybrid || {})
+            : DATA.users;
+        const id = pool[Math.floor(Math.random() * pool.length)];
+        setUser(parseInt(id));
     }
 
     function switchMethod(method) {
         currentMethod = method;
-        document.querySelectorAll(".method-tab").forEach(t => {
-            t.classList.toggle("active", t.dataset.method === method);
+        document.querySelectorAll('.method-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.method === method);
         });
+        updateMethodInfo();
         renderResults();
     }
 
-    function showResults() {
-        document.getElementById("step2").classList.add("hidden");
-        document.getElementById("resultsArea").classList.remove("hidden");
+    function updateMethodInfo() {
+        const info = METHOD_INFO[currentMethod];
+        document.getElementById('methodInfo').innerHTML = `
+            <div class="method-info-icon">${info.icon}</div>
+            <div class="method-info-body">
+                <div class="method-info-title">${info.title}</div>
+                <div class="method-info-desc">${info.desc}</div>
+                <div class="method-info-expect">${info.expect}</div>
+            </div>
+        `;
+    }
 
-        const genreText = selectedGenres.size > 0
-            ? `User ${currentUserId} — ${[...selectedGenres].join(", ")}`
-            : `User ${currentUserId} — All Genres`;
-        document.getElementById("resultsTitle").textContent = genreText;
+    function toggleGenre(btn, genre) {
+        if (selectedGenres.has(genre)) {
+            selectedGenres.delete(genre);
+            btn.classList.remove('selected');
+        } else {
+            selectedGenres.add(genre);
+            btn.classList.add('selected');
+        }
+        const clearBtn = document.getElementById('clearGenresBtn');
+        clearBtn.classList.toggle('visible', selectedGenres.size > 0);
+        renderResults();
+    }
 
-        currentMethod = "hybrid";
-        document.querySelectorAll(".method-tab").forEach(t => {
-            t.classList.toggle("active", t.dataset.method === "hybrid");
-        });
-
+    function clearGenres() {
+        selectedGenres.clear();
+        document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('selected'));
+        document.getElementById('clearGenresBtn').classList.remove('visible');
         renderResults();
     }
 
     function renderResults() {
-        const list = document.getElementById("movieList");
-        const methodMap = { hybrid: "hybrid", content: "content", collaborative: "collaborative" };
-        const recs = (DATA[methodMap[currentMethod]] || {})[currentUserId] || [];
+        const loader = document.getElementById('resultsLoader');
+        const list = document.getElementById('movieList');
 
-        let filtered = recs;
-        if (selectedGenres.size > 0) {
-            filtered = recs.filter(r =>
-                r.genres && r.genres.some(g => selectedGenres.has(g))
-            );
-        }
-
-        const top10 = filtered.slice(0, 10);
-
-        if (top10.length === 0) {
-            list.innerHTML = '<div class="no-results">No recommendations found for this combination. Try different genres or User ID.</div>';
+        if (!DATA) {
+            loader.style.display = 'block';
+            list.style.display = 'none';
             return;
         }
 
-        list.innerHTML = top10.map((m, i) => `
+        loader.style.display = 'none';
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
+
+        const recs = (DATA[currentMethod] || {})[currentUser] || [];
+
+        // No data for this user+method combination
+        if (recs.length === 0) {
+            const isHybridGap = currentMethod === 'hybrid';
+            document.getElementById('resultsCount').textContent = '';
+            document.getElementById('resultsNote').textContent = '';
+            list.innerHTML = `
+                <div class="no-results">
+                    <p>No ${currentMethod} recommendations for User ${currentUser}.</p>
+                    <small>${isHybridGap
+                        ? 'Hybrid requires scores from both content and collaborative methods. Try users 1–40, or switch to Content-Based which covers all 671 users.'
+                        : 'This user may not have enough ratings for this method. Try a different user or algorithm.'
+                    }</small>
+                </div>`;
+            return;
+        }
+
+        let filtered = recs;
+        if (selectedGenres.size > 0) {
+            filtered = recs.filter(r => r.genres && r.genres.some(g => selectedGenres.has(g)));
+        }
+
+        const top = filtered.slice(0, 10);
+
+        if (top.length === 0) {
+            document.getElementById('resultsCount').textContent = '';
+            document.getElementById('resultsNote').textContent = '';
+            list.innerHTML = `
+                <div class="no-results">
+                    <p>No results match the selected genres for User ${currentUser}.</p>
+                    <small>Try clearing the genre filter or selecting different genres.</small>
+                </div>`;
+            return;
+        }
+
+        const filterNote = selectedGenres.size > 0
+            ? ` · filtered to: ${[...selectedGenres].join(', ')}`
+            : '';
+
+        document.getElementById('resultsCount').textContent =
+            `Top ${top.length} recommendation${top.length !== 1 ? 's' : ''} for User ${currentUser}`;
+        document.getElementById('resultsNote').textContent = filterNote;
+
+        list.innerHTML = top.map((m, i) => `
             <div class="movie-card">
-                <div class="movie-rank">${i + 1}</div>
+                <div class="movie-rank ${i < 3 ? 'top3' : ''}">${i + 1}</div>
                 <div class="movie-info">
                     <div class="movie-title">${escapeHtml(m.title)}</div>
                     <div class="movie-genres">
                         ${(m.genres || []).map(g =>
                             `<span class="movie-genre-tag ${selectedGenres.has(g) ? 'match' : ''}">${g}</span>`
-                        ).join("")}
+                        ).join('')}
                     </div>
                 </div>
-                <div class="movie-score">${m.score.toLocaleString()}</div>
+                <div class="score-wrap">
+                    <div class="movie-score">${Number(m.score).toLocaleString(undefined, {maximumFractionDigits: 1})}</div>
+                    <span class="score-label">score</span>
+                </div>
             </div>
-        `).join("");
+        `).join('');
     }
 
     function escapeHtml(str) {
-        const div = document.createElement("div");
-        div.textContent = str;
-        return div.innerHTML;
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
     }
-
-    // Enter key on User ID input
-    document.getElementById("userIdInput").addEventListener("keydown", e => {
-        if (e.key === "Enter") goToStep2();
-    });
 </script>
 </body>
 </html>
