@@ -26,6 +26,52 @@
             overflow-x: hidden;
         }
 
+        /* ── Loading Overlay ── */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: var(--dark);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transition: opacity 0.5s ease;
+        }
+
+        #loadingOverlay.fade-out { opacity: 0; pointer-events: none; }
+
+        .loader-logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.5rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+        }
+
+        .loader-dots { display: flex; gap: 8px; }
+        .loader-dots span {
+            width: 8px; height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            animation: dotpulse 1.2s infinite;
+        }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotpulse {
+            0%, 100% { opacity: 0.25; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .loader-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
         /* ── Nav ── */
         nav {
             position: sticky;
@@ -64,13 +110,12 @@
         }
 
         .nav-link:hover { border-color: var(--gold); color: var(--gold); }
-
         .nav-link svg { width: 13px; height: 13px; fill: currentColor; }
 
         /* ── Hero ── */
         .hero {
             padding: 64px 32px 56px;
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
         }
 
@@ -93,10 +138,10 @@
         }
 
         .hero-desc {
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             color: var(--text-muted);
-            line-height: 1.6;
-            max-width: 620px;
+            line-height: 1.7;
+            max-width: 640px;
             margin-bottom: 28px;
             font-weight: 300;
         }
@@ -105,7 +150,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-bottom: 32px;
+            margin-bottom: 36px;
         }
 
         .tech-pill {
@@ -129,28 +174,28 @@
             flex-wrap: wrap;
         }
 
-        .stat { }
         .stat-val {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.8rem;
             color: var(--text);
             letter-spacing: 1px;
         }
+
         .stat-label {
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-top: 2px;
         }
 
-        /* ── Demo ── */
+        /* ── Demo Section ── */
         .demo-section {
             background: var(--dark-surface);
             border-top: 1px solid var(--dark-border);
             border-bottom: 1px solid var(--dark-border);
-            padding: 48px 32px;
+            padding: 52px 32px;
         }
 
-        .demo-inner { max-width: 900px; margin: 0 auto; }
+        .demo-inner { max-width: 960px; margin: 0 auto; }
 
         .demo-header {
             display: flex;
@@ -158,7 +203,7 @@
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .demo-header h2 {
@@ -192,55 +237,151 @@
             50% { opacity: 0.3; }
         }
 
-        .demo-controls {
+        /* ── User Picker ── */
+        .user-picker-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            gap: 24px;
+            margin-bottom: 28px;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
         }
 
-        .control-group { display: flex; align-items: center; gap: 8px; }
+        .user-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
 
-        .control-label {
-            font-size: 0.78rem;
-            color: var(--text-muted);
+        .field-label {
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 500;
         }
 
-        select#userSelect {
+        .user-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        #userIdInput {
+            width: 100px;
+            padding: 9px 14px;
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
             border-radius: 8px;
             color: var(--text);
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            padding: 8px 14px;
-            cursor: pointer;
+            font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s;
+            text-align: center;
         }
 
-        select#userSelect:focus, select#userSelect:hover { border-color: var(--gold); }
+        #userIdInput:focus { border-color: var(--gold); }
+        #userIdInput.error { border-color: #f87171; }
 
-        .method-tabs {
+        .btn-random {
+            padding: 9px 16px;
+            background: transparent;
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-random:hover { border-color: var(--gold); color: var(--gold); }
+
+        .user-hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .user-hint .hint-error { color: #f87171; }
+
+        /* ── User Explainer Card ── */
+        .user-explainer {
+            flex: 1;
+            min-width: 260px;
+            background: rgba(212,175,55,0.04);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 10px;
+            padding: 16px 20px;
+        }
+
+        .user-explainer-title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .user-explainer p {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .user-explainer strong { color: var(--text); font-weight: 500; }
+
+        .suggest-users {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .suggest-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        .suggest-btn {
+            padding: 3px 10px;
+            border: 1px solid var(--dark-border);
+            border-radius: 12px;
+            background: var(--dark-card);
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .suggest-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* ── Method Tabs ── */
+        .method-section { margin-bottom: 24px; }
+
+        .tabs-row {
             display: flex;
             gap: 4px;
             background: var(--dark-card);
             border: 1px solid var(--dark-border);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 4px;
+            margin-bottom: 12px;
+            width: fit-content;
         }
 
         .method-tab {
-            padding: 6px 16px;
-            border-radius: 6px;
+            padding: 8px 20px;
+            border-radius: 7px;
             border: none;
             background: transparent;
             color: var(--text-muted);
             font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.88rem;
             cursor: pointer;
             transition: all 0.15s;
             white-space: nowrap;
@@ -252,19 +393,62 @@
             font-weight: 600;
         }
 
-        .genre-filter {
-            margin-bottom: 24px;
+        /* Method info card */
+        .method-info {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
         }
 
-        .genre-filter-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .method-info-icon {
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .method-info-body { flex: 1; }
+
+        .method-info-title {
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .method-info-desc {
+            font-size: 0.82rem;
             color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .method-info-expect {
+            font-size: 0.8rem;
+            color: var(--gold);
+            background: rgba(212,175,55,0.06);
+            border: 1px solid rgba(212,175,55,0.15);
+            border-radius: 6px;
+            padding: 6px 12px;
+            line-height: 1.5;
+        }
+
+        .method-info-expect strong { color: var(--gold-light); }
+
+        /* ── Genre Filter ── */
+        .genre-section { margin-bottom: 24px; }
+
+        .genre-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             margin-bottom: 10px;
         }
 
-        .genre-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .genre-chips { display: flex; flex-wrap: wrap; gap: 7px; }
 
         .genre-chip {
             padding: 5px 14px;
@@ -280,6 +464,7 @@
         }
 
         .genre-chip:hover { border-color: var(--gold); color: var(--text); }
+
         .genre-chip.selected {
             background: var(--gold);
             color: var(--dark);
@@ -287,23 +472,34 @@
             font-weight: 500;
         }
 
-        /* Results */
-        .results-meta {
+        .clear-genres-btn {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: color 0.15s;
+            display: none;
+        }
+
+        .clear-genres-btn.visible { display: inline; }
+        .clear-genres-btn:hover { color: var(--gold); }
+
+        /* ── Results ── */
+        .results-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 12px;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
 
-        .results-count {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
+        .results-count { font-size: 0.8rem; color: var(--text-muted); }
 
-        .method-description {
-            font-size: 0.78rem;
+        .results-note {
+            font-size: 0.75rem;
             color: var(--text-muted);
             font-style: italic;
         }
@@ -359,47 +555,70 @@
             border: 1px solid var(--dark-border);
         }
 
-        .movie-genre-tag.match {
-            border-color: rgba(212,175,55,0.5);
-            color: var(--gold);
+        .movie-genre-tag.match { border-color: rgba(212,175,55,0.5); color: var(--gold); }
+
+        .score-wrap {
+            text-align: right;
+            flex-shrink: 0;
         }
 
         .movie-score {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1rem;
             color: var(--text-muted);
-            white-space: nowrap;
+        }
+
+        .score-label {
+            font-size: 0.65rem;
+            color: var(--dark-border);
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .no-results {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 28px 24px;
             text-align: center;
-            color: var(--text-muted);
-            padding: 32px;
-            font-size: 0.9rem;
         }
+
+        .no-results p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 8px; }
+        .no-results small { font-size: 0.78rem; color: var(--text-muted); opacity: 0.6; }
 
         #resultsLoader {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-border);
+            border-radius: 8px;
+            padding: 32px 24px;
             text-align: center;
-            padding: 40px;
+            font-size: 0.88rem;
             color: var(--text-muted);
-            font-size: 0.9rem;
         }
 
-        /* ── Sections ── */
-        .content-section { padding: 64px 32px; max-width: 900px; margin: 0 auto; }
+        /* ── How It Works ── */
+        .content-section { padding: 64px 32px; max-width: 960px; margin: 0 auto; }
 
         .section-title {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 2rem;
             color: var(--gold);
             letter-spacing: 2px;
-            margin-bottom: 32px;
+            margin-bottom: 8px;
         }
 
-        /* ── Algorithm Cards ── */
+        .section-subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
         .algo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 16px;
         }
 
@@ -409,9 +628,11 @@
             border-radius: 10px;
             padding: 24px;
             transition: border-color 0.2s;
+            display: flex;
+            flex-direction: column;
         }
 
-        .algo-card:hover { border-color: rgba(212,175,55,0.4); }
+        .algo-card:hover { border-color: rgba(212,175,55,0.35); }
 
         .algo-card-header {
             display: flex;
@@ -421,10 +642,9 @@
         }
 
         .algo-icon {
-            width: 36px;
-            height: 36px;
+            width: 36px; height: 36px;
             background: rgba(212,175,55,0.1);
-            border: 1px solid rgba(212,175,55,0.3);
+            border: 1px solid rgba(212,175,55,0.25);
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -440,21 +660,53 @@
             letter-spacing: 1px;
         }
 
-        .algo-card p { font-size: 0.85rem; line-height: 1.6; color: var(--text-muted); }
+        .algo-card p {
+            font-size: 0.84rem;
+            line-height: 1.65;
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .algo-expect {
+            margin-top: 14px;
+            padding: 10px 12px;
+            background: var(--dark-surface);
+            border-left: 2px solid var(--gold);
+            border-radius: 0 6px 6px 0;
+        }
+
+        .algo-expect-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 4px;
+        }
+
+        .algo-expect p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
 
         .algo-tag {
             display: inline-block;
             margin-top: 12px;
             padding: 3px 10px;
             font-size: 0.7rem;
-            border: 1px solid rgba(212,175,55,0.4);
+            border: 1px solid rgba(212,175,55,0.35);
             color: var(--gold);
             border-radius: 12px;
         }
 
         /* ── Architecture ── */
-        .arch-section { background: var(--dark-surface); border-top: 1px solid var(--dark-border); padding: 64px 32px; }
-        .arch-inner { max-width: 900px; margin: 0 auto; }
+        .arch-section {
+            background: var(--dark-surface);
+            border-top: 1px solid var(--dark-border);
+            padding: 64px 32px;
+        }
+
+        .arch-inner { max-width: 960px; margin: 0 auto; }
 
         .pipeline {
             display: flex;
@@ -474,8 +726,18 @@
             min-width: 120px;
         }
 
-        .pipeline-node .node-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .pipeline-node .node-title { font-weight: 500; font-size: 0.88rem; margin-top: 3px; }
+        .pipeline-node .node-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pipeline-node .node-title {
+            font-weight: 500;
+            font-size: 0.88rem;
+            margin-top: 4px;
+        }
 
         .pipeline-arrow { color: var(--gold); font-size: 1.2rem; }
 
@@ -515,17 +777,27 @@
         @media (max-width: 640px) {
             nav { padding: 0 16px; }
             .hero { padding: 40px 16px 36px; }
-            .demo-section { padding: 32px 16px; }
+            .demo-section { padding: 36px 16px; }
             .content-section { padding: 48px 16px; }
             .arch-section { padding: 48px 16px; }
             .hero-stats { gap: 24px; }
-            .demo-controls { flex-direction: column; align-items: flex-start; }
+            .user-picker-row { flex-direction: column; }
+            .tabs-row { width: 100%; overflow-x: auto; }
             .pipeline { flex-direction: column; align-items: flex-start; }
             .pipeline-arrow { transform: rotate(90deg); }
         }
     </style>
 </head>
 <body>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay">
+    <div class="loader-logo">CineMatch</div>
+    <div class="loader-dots">
+        <span></span><span></span><span></span>
+    </div>
+    <div class="loader-text">Loading 100,004 ratings across 671 users…<br>This may take a few seconds.</div>
+</div>
 
 <!-- Nav -->
 <nav>
@@ -543,7 +815,7 @@
     <div class="hero-eyebrow">Portfolio Project</div>
     <h1>CineMatch</h1>
     <p class="hero-desc">
-        Hybrid movie recommendation engine built on Hadoop MapReduce. Implements three recommendation approaches — TF-IDF content similarity, co-occurrence collaborative filtering, and score-fusion hybrid — across 100K ratings.
+        Hybrid movie recommendation engine built on Hadoop MapReduce. Implements three recommendation approaches — TF-IDF content similarity, co-occurrence collaborative filtering, and score-fusion hybrid — trained on the MovieLens 100K dataset.
     </p>
     <div class="tech-pills">
         <span class="tech-pill highlight">Python</span>
@@ -576,69 +848,125 @@
 <!-- Live Demo -->
 <div class="demo-section">
     <div class="demo-inner">
+
         <div class="demo-header">
             <h2>Live Demo</h2>
-            <span class="demo-live-badge"><span class="live-dot"></span> Pre-computed results</span>
+            <span class="demo-live-badge"><span class="live-dot"></span> Pre-computed from MapReduce output</span>
         </div>
 
-        <div class="demo-controls">
-            <div class="control-group">
-                <span class="control-label">User</span>
-                <select id="userSelect" onchange="onUserChange()">
-                    <!-- populated by JS -->
-                </select>
+        <!-- User Picker + Explainer -->
+        <div class="user-picker-row">
+            <div class="user-picker">
+                <div class="field-label">User ID</div>
+                <div class="user-input-group">
+                    <input type="number" id="userIdInput" min="1" max="671" value="1" />
+                    <button class="btn-random" onclick="pickRandom()">&#127922; Random</button>
+                </div>
+                <div class="user-hint" id="userHint">Any value from 1 to 671</div>
             </div>
-            <div class="method-tabs" id="methodTabs">
-                <button class="method-tab active" data-method="hybrid" onclick="switchMethod('hybrid')">Hybrid</button>
-                <button class="method-tab" data-method="content" onclick="switchMethod('content')">Content-Based</button>
+
+            <div class="user-explainer">
+                <div class="user-explainer-title">&#8505;&#65039; What are User IDs?</div>
+                <p>
+                    These are <strong>real, anonymous movie fans</strong> from the
+                    <strong>MovieLens 100K dataset</strong>, collected by the University of
+                    Minnesota in 1997–1998. Each of the <strong>671 users</strong> rated at least
+                    20 movies — their identities are never revealed, only their ratings.
+                    Changing the User ID shows you what that person's personalized
+                    recommendations would look like under each algorithm.
+                </p>
+                <div class="suggest-users">
+                    <span class="suggest-label">Try:</span>
+                    <button class="suggest-btn" onclick="setUser(1)">User 1</button>
+                    <button class="suggest-btn" onclick="setUser(42)">User 42</button>
+                    <button class="suggest-btn" onclick="setUser(200)">User 200</button>
+                    <button class="suggest-btn" onclick="setUser(500)">User 500</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm Tabs + Info -->
+        <div class="method-section">
+            <div class="field-label" style="margin-bottom:10px;">Algorithm</div>
+            <div class="tabs-row" id="methodTabs">
+                <button class="method-tab active" data-method="content" onclick="switchMethod('content')">Content-Based</button>
                 <button class="method-tab" data-method="collaborative" onclick="switchMethod('collaborative')">Collaborative</button>
+                <button class="method-tab" data-method="hybrid" onclick="switchMethod('hybrid')">Hybrid</button>
+            </div>
+            <div class="method-info" id="methodInfo">
+                <!-- populated by JS -->
             </div>
         </div>
 
-        <div class="genre-filter">
-            <div class="genre-filter-label">Filter by genre <span style="font-size:0.7rem;opacity:0.5;">(optional)</span></div>
+        <!-- Genre Filter -->
+        <div class="genre-section">
+            <div class="genre-section-header">
+                <span class="field-label">Filter by Genre</span>
+                <span style="font-size:0.75rem;color:var(--text-muted);">— optional, narrows results to selected genres</span>
+                <button class="clear-genres-btn" id="clearGenresBtn" onclick="clearGenres()">Clear</button>
+            </div>
             <div class="genre-chips" id="genreChips"></div>
         </div>
 
-        <div id="resultsLoader">Loading recommendations…</div>
-        <div id="resultsContainer" style="display:none;">
-            <div class="results-meta">
-                <span class="results-count" id="resultsCount"></span>
-                <span class="method-description" id="methodDesc"></span>
-            </div>
-            <div class="movie-list" id="movieList"></div>
+        <!-- Results -->
+        <div class="results-header">
+            <span class="results-count" id="resultsCount"></span>
+            <span class="results-note" id="resultsNote"></span>
         </div>
+        <div id="resultsLoader">Loading data…</div>
+        <div id="movieList" style="display:none;"></div>
+
     </div>
 </div>
 
 <!-- How It Works -->
 <div class="content-section">
     <h2 class="section-title">How It Works</h2>
+    <p class="section-subtitle">
+        Each algorithm approaches the recommendation problem from a different angle.
+        Understanding the differences helps you interpret what you see in the demo above.
+    </p>
     <div class="algo-grid">
+
         <div class="algo-card">
             <div class="algo-card-header">
                 <div class="algo-icon">🎬</div>
                 <h3>Content-Based</h3>
             </div>
-            <p>Builds a user taste profile by TF-IDF weighting genres across all rated movies. Recommends films with the highest cosine similarity to that profile. Runs as a 2-step MapReduce job.</p>
-            <span class="algo-tag">TF-IDF · Genre Similarity</span>
+            <p>Builds a personal genre profile for each user by TF-IDF-weighting every genre they've rated. High-frequency genres get lower weight (like stopwords in NLP) — rare genre preferences count more. Then scores all unrated movies by cosine similarity to that profile. Runs as two MapReduce steps.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>Results closely reflect the user's genre history. A Drama fan gets Drama-heavy picks. Results are predictable and explainable but may feel repetitive — it won't suggest something outside your usual taste.</p>
+            </div>
+            <span class="algo-tag">TF-IDF · Genre Similarity · 2 MR Steps</span>
         </div>
+
         <div class="algo-card">
             <div class="algo-card-header">
                 <div class="algo-icon">👥</div>
                 <h3>Collaborative</h3>
             </div>
-            <p>Constructs a co-occurrence matrix across all users, then scores unrated movies by how often they appear alongside already-rated films. Two MapReduce passes: co-occurrence then scoring.</p>
-            <span class="algo-tag">Co-occurrence Matrix</span>
+            <p>Builds a co-occurrence matrix: for every pair of movies rated by the same user, increments their co-occurrence count. Then for each user, scores unrated movies by the total co-occurrence weight with their rated films. Two MapReduce passes: one to build the matrix, one to compute scores.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>More eclectic and surprising picks. This method doesn't know about genres — it only knows what people watched together. You may see recommendations that cross genre lines but reflect real viewing patterns.</p>
+            </div>
+            <span class="algo-tag">Co-occurrence Matrix · 2 MR Steps</span>
         </div>
+
         <div class="algo-card">
             <div class="algo-card-header">
                 <div class="algo-icon">⚡</div>
                 <h3>Hybrid</h3>
             </div>
-            <p>Multiplies content-based and collaborative scores for each (user, movie) pair. Surfaces movies that match your genre taste AND have strong co-occurrence signal — the best of both.</p>
-            <span class="algo-tag">Score Fusion</span>
+            <p>Multiplies the content-based and collaborative scores for each (user, movie) pair. A movie must score well on <em>both</em> signals to rank here — pure genre matches that aren't popular in co-occurrence get filtered out, and vice versa. One final MapReduce step joins and multiplies the two output files.</p>
+            <div class="algo-expect">
+                <div class="algo-expect-label">What to expect</div>
+                <p>The strongest, most balanced recommendations. These movies fit your genre taste AND align with crowd wisdom. Only available for users who have scores in both methods — try users 1–40 for best results.</p>
+            </div>
+            <span class="algo-tag">Score Fusion · Multiplication</span>
         </div>
+
     </div>
 </div>
 
@@ -646,6 +974,9 @@
 <div class="arch-section">
     <div class="arch-inner">
         <h2 class="section-title">Architecture</h2>
+        <p class="section-subtitle" style="margin-bottom:28px;">
+            All processing runs as Python MapReduce jobs via mrjob, executed on a Hadoop cluster (HDFS + YARN). The pipeline is fully parallelisable across the cluster.
+        </p>
         <div class="pipeline">
             <div class="pipeline-node">
                 <div class="node-label">Input</div>
@@ -713,37 +1044,51 @@
 <script>
     let DATA = null;
     let selectedGenres = new Set();
-    let currentUser = null;
-    let currentMethod = 'hybrid';
+    let currentUser = '1';
+    let currentMethod = 'content';
 
-    const METHOD_DESC = {
-        hybrid: 'Score fusion: content-based × collaborative',
-        content: 'TF-IDF genre similarity to user taste profile',
-        collaborative: 'Co-occurrence across all user ratings'
+    const METHOD_INFO = {
+        content: {
+            icon: '🎬',
+            title: 'Content-Based Filtering',
+            desc: 'Scores movies by how well their genres match this user\'s TF-IDF taste profile — built from every film they\'ve ever rated.',
+            expect: '<strong>Expect:</strong> Genre-consistent picks that reflect what this user has historically enjoyed. Results are predictable and tightly tied to their rating history.'
+        },
+        collaborative: {
+            icon: '👥',
+            title: 'Collaborative Filtering',
+            desc: 'Scores unrated movies by their co-occurrence with films this user has already rated, aggregated across the entire 671-user dataset.',
+            expect: '<strong>Expect:</strong> Potentially surprising picks that cross genre lines. This method doesn\'t see genres — it only knows what people watched together.'
+        },
+        hybrid: {
+            icon: '⚡',
+            title: 'Hybrid (Score Fusion)',
+            desc: 'Multiplies content-based and collaborative scores. A movie must perform well on both signals to rank here.',
+            expect: '<strong>Expect:</strong> The most balanced recommendations. Note: only users 1–40 have hybrid scores — both content and collaborative data are required for this method.'
+        }
     };
 
-    fetch('slim-data.json')
+    // Kick off data load immediately
+    fetch('data.json')
         .then(r => r.json())
         .then(d => {
             DATA = d;
             initDemo();
+            dismissLoader();
         })
         .catch(() => {
-            document.getElementById('resultsLoader').textContent = 'Failed to load demo data.';
+            document.getElementById('loadingOverlay').innerHTML =
+                '<div style="color:#f87171;text-align:center;padding:24px;">Failed to load data.json.<br><small>Run generate_web_data.py first.</small></div>';
         });
+
+    function dismissLoader() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 600);
+    }
 
     function initDemo() {
-        // Populate user select
-        const sel = document.getElementById('userSelect');
-        DATA.users.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u;
-            opt.textContent = `User ${u}`;
-            sel.appendChild(opt);
-        });
-        currentUser = DATA.users[0];
-
-        // Populate genre chips
+        // Build genre chips
         const chips = document.getElementById('genreChips');
         DATA.genres.forEach(g => {
             const btn = document.createElement('button');
@@ -753,12 +1098,44 @@
             chips.appendChild(btn);
         });
 
+        // Set up user input listener
+        const input = document.getElementById('userIdInput');
+        input.addEventListener('input', () => {
+            const val = parseInt(input.value);
+            if (!isNaN(val) && DATA.users.includes(String(val))) {
+                input.classList.remove('error');
+                currentUser = String(val);
+                document.getElementById('userHint').innerHTML = '';
+                renderResults();
+            } else if (input.value !== '') {
+                input.classList.add('error');
+                document.getElementById('userHint').innerHTML =
+                    '<span class="hint-error">Enter a number between 1 and 671</span>';
+            }
+        });
+
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+
+        updateMethodInfo();
         renderResults();
     }
 
-    function onUserChange() {
-        currentUser = document.getElementById('userSelect').value;
+    function setUser(id) {
+        const input = document.getElementById('userIdInput');
+        input.value = id;
+        input.classList.remove('error');
+        currentUser = String(id);
+        document.getElementById('userHint').innerHTML = '';
         renderResults();
+    }
+
+    function pickRandom() {
+        if (!DATA) return;
+        const pool = currentMethod === 'hybrid'
+            ? Object.keys(DATA.hybrid || {})
+            : DATA.users;
+        const id = pool[Math.floor(Math.random() * pool.length)];
+        setUser(parseInt(id));
     }
 
     function switchMethod(method) {
@@ -766,7 +1143,20 @@
         document.querySelectorAll('.method-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.method === method);
         });
+        updateMethodInfo();
         renderResults();
+    }
+
+    function updateMethodInfo() {
+        const info = METHOD_INFO[currentMethod];
+        document.getElementById('methodInfo').innerHTML = `
+            <div class="method-info-icon">${info.icon}</div>
+            <div class="method-info-body">
+                <div class="method-info-title">${info.title}</div>
+                <div class="method-info-desc">${info.desc}</div>
+                <div class="method-info-expect">${info.expect}</div>
+            </div>
+        `;
     }
 
     function toggleGenre(btn, genre) {
@@ -777,35 +1167,76 @@
             selectedGenres.add(genre);
             btn.classList.add('selected');
         }
+        const clearBtn = document.getElementById('clearGenresBtn');
+        clearBtn.classList.toggle('visible', selectedGenres.size > 0);
+        renderResults();
+    }
+
+    function clearGenres() {
+        selectedGenres.clear();
+        document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('selected'));
+        document.getElementById('clearGenresBtn').classList.remove('visible');
         renderResults();
     }
 
     function renderResults() {
         const loader = document.getElementById('resultsLoader');
-        const container = document.getElementById('resultsContainer');
+        const list = document.getElementById('movieList');
 
-        if (!DATA || !currentUser) return;
+        if (!DATA) {
+            loader.style.display = 'block';
+            list.style.display = 'none';
+            return;
+        }
+
+        loader.style.display = 'none';
+        list.style.display = 'flex';
+        list.style.flexDirection = 'column';
+        list.style.gap = '8px';
 
         const recs = (DATA[currentMethod] || {})[currentUser] || [];
+
+        // No data for this user+method combination
+        if (recs.length === 0) {
+            const isHybridGap = currentMethod === 'hybrid';
+            document.getElementById('resultsCount').textContent = '';
+            document.getElementById('resultsNote').textContent = '';
+            list.innerHTML = `
+                <div class="no-results">
+                    <p>No ${currentMethod} recommendations for User ${currentUser}.</p>
+                    <small>${isHybridGap
+                        ? 'Hybrid requires scores from both content and collaborative methods. Try users 1–40, or switch to Content-Based which covers all 671 users.'
+                        : 'This user may not have enough ratings for this method. Try a different user or algorithm.'
+                    }</small>
+                </div>`;
+            return;
+        }
+
         let filtered = recs;
         if (selectedGenres.size > 0) {
             filtered = recs.filter(r => r.genres && r.genres.some(g => selectedGenres.has(g)));
         }
+
         const top = filtered.slice(0, 10);
 
-        loader.style.display = 'none';
-        container.style.display = 'block';
-
-        document.getElementById('resultsCount').textContent =
-            top.length > 0 ? `Showing ${top.length} recommendation${top.length !== 1 ? 's' : ''}` : '';
-        document.getElementById('methodDesc').textContent = METHOD_DESC[currentMethod] || '';
-
-        const list = document.getElementById('movieList');
-
         if (top.length === 0) {
-            list.innerHTML = '<div class="no-results">No results for this combination — try a different genre or user.</div>';
+            document.getElementById('resultsCount').textContent = '';
+            document.getElementById('resultsNote').textContent = '';
+            list.innerHTML = `
+                <div class="no-results">
+                    <p>No results match the selected genres for User ${currentUser}.</p>
+                    <small>Try clearing the genre filter or selecting different genres.</small>
+                </div>`;
             return;
         }
+
+        const filterNote = selectedGenres.size > 0
+            ? ` · filtered to: ${[...selectedGenres].join(', ')}`
+            : '';
+
+        document.getElementById('resultsCount').textContent =
+            `Top ${top.length} recommendation${top.length !== 1 ? 's' : ''} for User ${currentUser}`;
+        document.getElementById('resultsNote').textContent = filterNote;
 
         list.innerHTML = top.map((m, i) => `
             <div class="movie-card">
@@ -818,7 +1249,10 @@
                         ).join('')}
                     </div>
                 </div>
-                <div class="movie-score">${Number(m.score).toLocaleString(undefined, {maximumFractionDigits: 1})}</div>
+                <div class="score-wrap">
+                    <div class="movie-score">${Number(m.score).toLocaleString(undefined, {maximumFractionDigits: 1})}</div>
+                    <span class="score-label">score</span>
+                </div>
             </div>
         `).join('');
     }
