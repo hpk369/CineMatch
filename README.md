@@ -4,9 +4,9 @@
 
 A hybrid movie recommendation engine built on **Hadoop MapReduce** using **Python (mrjob)**, implementing three recommendation approaches:
 
-- **Content-Based Filtering** — TF-IDF weighted genre similarity
-- **Collaborative Filtering** — user co-occurrence patterns
-- **Hybrid** — combines both scores by multiplication
+- **Content-Based Filtering**: TF-IDF weighted genre similarity
+- **Collaborative Filtering**: user co-occurrence patterns
+- **Hybrid**: combines both scores by multiplication
 
 ## Architecture
 
